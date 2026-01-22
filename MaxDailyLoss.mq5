@@ -1,10 +1,9 @@
 ﻿//+------------------------------------------------------------------+
 //|                                             MaxDailyLoss.mq5     |
 //|                                        Copyright 2026, Syam      |
-//|                                                                  |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2026, Syam"
-#property version   "3.00"   // Percentage only mode
+#property version   "3.00"
 #property indicator_chart_window
 
 #property indicator_buffers 1
@@ -259,3 +258,4 @@ double CalculateDailyPL()
   }
 
 //+------------------------------------------------------------------+
+
