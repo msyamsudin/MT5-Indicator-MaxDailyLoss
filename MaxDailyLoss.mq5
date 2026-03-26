@@ -1,34 +1,36 @@
 //+------------------------------------------------------------------+
 //| MaxDailyLoss.mq5                                                 |
 //| Copyright 2026, Syam                                             |
+//| Version 4.03                                                     |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2026, Syam"
 #property link      ""
-#property version   "4.02"
+#property version   "4.03"
 #property indicator_chart_window
 #property indicator_buffers 1
 #property indicator_plots   1
-#property indicator_label1  "Dummy"
 #property indicator_type1   DRAW_NONE
 #property indicator_color1  clrNONE
 
 //--- Inputs
-input double MaxLossPercent   = 4.0;                    // Max Daily Loss (%)
-input bool   UseFixedBalance  = true;                   // true = pakai balance statis
-input double FixedBalance     = 10000.0;                // Balance tetap (USD)
-
-input color  PanelBGColor     = clrBlack;
-input int    PanelWidth       = 240;
-input int    PanelHeight      = 110;
-input int    Corner           = CORNER_LEFT_UPPER;
-input int    XDistance        = 10;
-input int    YDistance        = 10;
-input color  TextColor        = clrWhite;
-input int    FontSize         = 10;
-input string Font             = "Consolas";
+input double  MaxLossPercent   = 4.0;           // Max Daily Loss (%)
+input bool    UseFixedBalance  = true;          // true = pakai balance statis
+input double  FixedBalance     = 10000.0;       // Balance tetap (USD)
+input bool    ShowDaysSinceLast= true;          // Tampilkan jumlah hari dari terakhir trade
+input color   TextColor        = clrWhite;      // Warna teks utama
+input color   PanelBGColor     = clrBlack;
+input int     PanelWidth       = 240;
+input int     PanelHeight      = 150;           // Diperbesar sedikit
+input int     Corner           = CORNER_LEFT_UPPER;
+input int     XDistance        = 10;
+input int     YDistance        = 10;
+input int     FontSize         = 10;
+input string  Font             = "Consolas";
 
 //--- Object names
-string DragArea       = "MaxLoss_DragArea";     // area kecil untuk drag (hampir tak terlihat)
+string DragArea       = "MaxLoss_DragArea";
+string LabelLastTrade = "MaxLoss_Lbl_LastTrade";
+string LabelLastVal   = "MaxLoss_Lbl_LastVal";
 string LabelAllowed   = "MaxLoss_Lbl_Allowed";
 string LabelAllowedVal= "MaxLoss_Lbl_AllowedVal";
 string LabelPL        = "MaxLoss_Lbl_PL";
@@ -38,12 +40,12 @@ string LabelRemVal    = "MaxLoss_Lbl_RemVal";
 string LabelPerc      = "MaxLoss_Lbl_Percent";
 
 //--- Globals
-double StartDailyBalance = 0.0;
-datetime CurrentDay      = 0;
-bool   IsDragging        = false;
-int    DragOffsetX       = 0;
-int    DragOffsetY       = 0;
-double DummyBuffer[];
+double   StartDailyBalance = 0.0;
+datetime CurrentDay        = 0;
+bool     IsDragging        = false;
+int      DragOffsetX       = 0;
+int      DragOffsetY       = 0;
+double   DummyBuffer[];
 
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
@@ -53,16 +55,24 @@ int OnInit()
    SetIndexBuffer(0, DummyBuffer, INDICATOR_DATA);
    PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, 0.0);
 
-   // Background utama (tanpa border)
-   CreateRectLabel("MaxLoss_BG", XDistance-8, YDistance-8, PanelWidth+16, PanelHeight+16, 
+   // Background utama
+   CreateRectLabel("MaxLoss_BG", XDistance-8, YDistance-8, PanelWidth+16, PanelHeight+16,
                    PanelBGColor, BORDER_FLAT, clrNONE, true);
 
-   // Area drag kecil & hampir tak terlihat (untuk tetap bisa di-drag)
-   CreateRectLabel(DragArea, XDistance-8, YDistance-8, PanelWidth+16, 24, 
+   // Area drag
+   CreateRectLabel(DragArea, XDistance-8, YDistance-8, PanelWidth+16, 24,
                    clrNONE, BORDER_FLAT, clrNONE, false);
 
-   // Content labels - lebih rapat
+   // Content labels - Last Trade di paling atas
    int y = 12;
+
+   if(ShowDaysSinceLast)
+     {
+      CreateLabel(LabelLastTrade, "Last Trade :", 10, y, TextColor, FontSize);
+      CreateLabel(LabelLastVal,   "---",         140, y, TextColor, FontSize);
+      y += 24;
+     }
+
    CreateLabel(LabelAllowed,   "Max Loss :",     10, y, TextColor, FontSize);
    CreateLabel(LabelAllowedVal,"---",           140, y, TextColor, FontSize); y += 24;
 
@@ -74,10 +84,8 @@ int OnInit()
    CreateLabel(LabelPerc,      "---",           230, y, clrLime, FontSize);
 
    ChartRedraw();
-
    ResetDailyBalance();
    CurrentDay = TimeCurrent() / 86400 * 86400;
-
    return(INIT_SUCCEEDED);
   }
 
@@ -136,8 +144,11 @@ void CreateLabel(string name, string text, int relx, int rely, color clr, int si
 //+------------------------------------------------------------------+
 void MoveAllObjects(int dx, int dy)
   {
-   string prefix[] = {"MaxLoss_BG", DragArea, LabelAllowed, LabelAllowedVal,
-                      LabelPL, LabelPLVal, LabelRem, LabelRemVal, LabelPerc};
+   string prefix[] = {"MaxLoss_BG", DragArea, 
+                      LabelLastTrade, LabelLastVal,
+                      LabelAllowed, LabelAllowedVal,
+                      LabelPL, LabelPLVal, 
+                      LabelRem, LabelRemVal, LabelPerc};
    for(int i = 0; i < ArraySize(prefix); i++)
      {
       if(ObjectFind(ChartID(), prefix[i]) < 0) continue;
@@ -163,7 +174,7 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
    else if(id == CHARTEVENT_MOUSE_MOVE && IsDragging)
      {
       if((lparam & 1) == 0) { IsDragging = false; return; }
-      
+     
       int newX = (int)lparam - DragOffsetX;
       int newY = (int)dparam - DragOffsetY;
       int currX = (int)ObjectGetInteger(ChartID(), DragArea, OBJPROP_XDISTANCE);
@@ -187,7 +198,6 @@ int OnCalculate(const int rates_total,
                 const int &spread[])
   {
    datetime today = TimeCurrent() / 86400 * 86400;
-
    if(today != CurrentDay)
      {
       ResetDailyBalance();
@@ -209,6 +219,7 @@ int OnCalculate(const int rates_total,
 
    color plColor  = (dailyPL >= 0) ? clrLime : clrRed;
 
+   // Update Labels
    ObjectSetString(ChartID(), LabelAllowedVal, OBJPROP_TEXT, StringFormat("%.2f", maxLoss));
    ObjectSetString(ChartID(), LabelPLVal,      OBJPROP_TEXT, StringFormat("%.2f", dailyPL));
    ObjectSetString(ChartID(), LabelRemVal,     OBJPROP_TEXT, StringFormat("%.2f", remaining));
@@ -219,9 +230,47 @@ int OnCalculate(const int rates_total,
    ObjectSetInteger(ChartID(), LabelRemVal, OBJPROP_COLOR, remColor);
    ObjectSetInteger(ChartID(), LabelPerc,   OBJPROP_COLOR, remColor);
 
+   // Update Last Trade (paling atas)
+   if(ShowDaysSinceLast && ObjectFind(ChartID(), LabelLastVal) >= 0)
+     {
+      int days = DaysSinceLastTrade();
+      string text = (days == 0) ? "Today" : StringFormat("%d days", days);
+      ObjectSetString(ChartID(), LabelLastVal, OBJPROP_TEXT, text);
+     }
+
    DummyBuffer[0] = 0.0;
    ChartRedraw(ChartID());
    return(rates_total);
+  }
+
+//+------------------------------------------------------------------+
+//| Hitung jumlah hari sejak trade terakhir ditutup                   |
+//+------------------------------------------------------------------+
+int DaysSinceLastTrade()
+  {
+   datetime lastCloseTime = 0;
+
+   if(!HistorySelect(0, TimeCurrent() + 86400)) return 0;
+
+   int total = HistoryDealsTotal();
+   for(int i = total - 1; i >= 0; i--)
+     {
+      ulong ticket = HistoryDealGetTicket(i);
+      if(ticket == 0) continue;
+
+      if(HistoryDealGetInteger(ticket, DEAL_ENTRY) == DEAL_ENTRY_OUT)
+        {
+         lastCloseTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
+         break;
+        }
+     }
+
+   if(lastCloseTime == 0) return 0;
+
+   datetime todayStart = TimeCurrent() / 86400 * 86400;
+   long secondsDiff = todayStart - (lastCloseTime / 86400 * 86400);
+
+   return (int)(secondsDiff / 86400);
   }
 
 //+------------------------------------------------------------------+
@@ -242,6 +291,7 @@ double CalculateDailyPL()
   {
    double pl = 0.0;
    datetime day_start = CurrentDay;
+
    if(!HistorySelect(day_start, TimeCurrent() + 86400)) return 0.0;
 
    int total = HistoryDealsTotal();
@@ -249,6 +299,7 @@ double CalculateDailyPL()
      {
       ulong ticket = HistoryDealGetTicket(i);
       if(ticket == 0) continue;
+
       if(HistoryDealGetInteger(ticket, DEAL_ENTRY) == DEAL_ENTRY_OUT)
         {
          datetime t = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
