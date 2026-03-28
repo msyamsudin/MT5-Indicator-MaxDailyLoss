@@ -1,11 +1,11 @@
 //+------------------------------------------------------------------+
 //| MaxDailyLoss.mq5                                                 |
 //| Copyright 2026, Syam                                             |
-//| Version 4.04                                                     |
+//| Version 4.05                                                     |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2026, Syam"
 #property link      ""
-#property version   "4.04"
+#property version   "4.05"
 #property indicator_chart_window
 #property indicator_buffers 1
 #property indicator_plots   1
@@ -13,19 +13,24 @@
 #property indicator_color1  clrNONE
 
 //--- Inputs
-input double MaxLossPercent   = 4.0;     // Max Daily Loss (%)
-input bool   UseFixedBalance  = true;    // true = pakai balance statis
-input double FixedBalance     = 10000.0; // Balance tetap (USD)
-input bool   ShowDaysSinceLast= true;    // Tampilkan jumlah hari dari terakhir trade
-input color  TextColor        = clrWhite;
-input color  PanelBGColor     = clrBlack;
-input int    PanelWidth       = 260;     // Diperlebar untuk margin info
-input int    PanelHeight      = 225;     // Diperbesar
-input int    Corner           = CORNER_LEFT_UPPER;
-input int    XDistance        = 10;
-input int    YDistance        = 10;
-input int    FontSize         = 10;
-input string Font             = "Consolas";
+input double MaxLossPercent        = 4.0;     // Max Daily Loss (%)
+input bool   UseFixedBalance       = true;    // Gunakan balance statis
+input double FixedBalance          = 10000.0; // Balance tetap (USD)
+input bool   ShowDaysSinceLast     = true;    // Tampilkan Last Trade
+
+//--- Margin Usage Settings (baru)
+input double MaxMarginUsageSafe    = 30.0;    // Batas aman Margin Usage (%) - Hijau
+input double MaxMarginUsageWarning = 50.0;    // Batas warning Margin Usage (%) - Kuning
+
+input color  TextColor             = clrWhite;
+input color  PanelBGColor          = clrBlack;
+input int    PanelWidth            = 260;
+input int    PanelHeight           = 225;
+input int    Corner                = CORNER_LEFT_UPPER;
+input int    XDistance             = 10;
+input int    YDistance             = 10;
+input int    FontSize              = 10;
+input string Font                  = "Consolas";
 
 //--- Object names
 string DragArea         = "MaxLoss_DragArea";
@@ -67,15 +72,12 @@ int OnInit()
    SetIndexBuffer(0, DummyBuffer, INDICATOR_DATA);
    PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, 0.0);
 
-   // Background utama
    CreateRectLabel("MaxLoss_BG", XDistance-8, YDistance-8, PanelWidth+16, PanelHeight+16,
                    PanelBGColor, BORDER_FLAT, clrNONE, true);
 
-   // Area drag
    CreateRectLabel(DragArea, XDistance-8, YDistance-8, PanelWidth+16, 24,
                    clrNONE, BORDER_FLAT, clrNONE, false);
 
-   // Content labels
    int y = 12;
    if(ShowDaysSinceLast)
      {
@@ -94,7 +96,7 @@ int OnInit()
    CreateLabel(LabelRemVal, "---", 150, y, clrLime, FontSize+1);
    CreateLabel(LabelPerc, "---", 235, y, clrLime, FontSize); y += 26;
 
-   // === Margin Usage Section ===
+   // Margin Usage Section
    CreateLabel(LabelMarginTitle, "=== MARGIN USAGE ===", 10, y, clrAqua, FontSize); y += 22;
    CreateLabel(LabelUsage, "Margin Usage :", 10, y, TextColor, FontSize);
    CreateLabel(LabelUsageVal, "---", 150, y, clrWhite, FontSize); y += 20;
@@ -235,6 +237,7 @@ int OnCalculate(const int rates_total,
       CurrentDay = today;
      }
 
+   // Daily Loss Calculation
    double closedPL     = CalculateDailyPL();
    double floatingPL   = AccountInfoDouble(ACCOUNT_PROFIT);
    double dailyPL      = closedPL + floatingPL;
@@ -259,7 +262,6 @@ int OnCalculate(const int rates_total,
    ObjectSetInteger(ChartID(), LabelRemVal, OBJPROP_COLOR, remColor);
    ObjectSetInteger(ChartID(), LabelPerc, OBJPROP_COLOR, remColor);
 
-   // Update Last Trade
    if(ShowDaysSinceLast && ObjectFind(ChartID(), LabelLastVal) >= 0)
      {
       int days = DaysSinceLastTrade();
@@ -267,7 +269,7 @@ int OnCalculate(const int rates_total,
       ObjectSetString(ChartID(), LabelLastVal, OBJPROP_TEXT, text);
      }
 
-   // === Margin Usage Section ===
+   // === Margin Usage Calculation ===
    double equity       = AccountInfoDouble(ACCOUNT_EQUITY);
    double used_margin  = AccountInfoDouble(ACCOUNT_MARGIN);
    double free_margin  = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
@@ -276,8 +278,9 @@ int OnCalculate(const int rates_total,
 
    double margin_usage = (equity > 0 && used_margin > 0) ? (used_margin / equity) * 100.0 : 0.0;
 
-   color usageColor = (margin_usage <= 30) ? clrLime :
-                      (margin_usage <= 50) ? clrYellow : clrRed;
+   // Warna berdasarkan input parameter (tidak hardcoded lagi)
+   color usageColor = (margin_usage <= MaxMarginUsageSafe) ? clrLime :
+                      (margin_usage <= MaxMarginUsageWarning) ? clrYellow : clrRed;
 
    ObjectSetString(ChartID(), LabelUsageVal,  OBJPROP_TEXT, StringFormat("%.1f%%", margin_usage));
    ObjectSetString(ChartID(), LabelLevelVal,  OBJPROP_TEXT, StringFormat("%.1f%%", margin_level));
@@ -287,7 +290,8 @@ int OnCalculate(const int rates_total,
 
    ObjectSetInteger(ChartID(), LabelUsageVal, OBJPROP_COLOR, usageColor);
 
-   if(margin_usage > 50)
+   // Peringatan jika melebihi batas warning
+   if(margin_usage > MaxMarginUsageWarning)
       ObjectSetString(ChartID(), LabelUsageVal, OBJPROP_TEXT, StringFormat("%.1f%% ⚠️", margin_usage));
 
    DummyBuffer[0] = 0.0;
@@ -296,7 +300,7 @@ int OnCalculate(const int rates_total,
   }
 
 //+------------------------------------------------------------------+
-//| Hitung jumlah hari sejak trade terakhir ditutup                  |
+//| Hitung jumlah hari sejak trade terakhir                          |
 //+------------------------------------------------------------------+
 int DaysSinceLastTrade()
   {
