@@ -27,17 +27,21 @@ Indikator MT5 untuk monitoring **batas kerugian harian** sekaligus **penggunaan 
 
 ## Parameter Input Utama
 
-| Parameter              | Deskripsi                                              | Default          |
-|------------------------|--------------------------------------------------------|------------------|
-| `MaxLossPercent`       | Persentase maksimal loss harian                        | 4.0              |
-| `UseFixedBalance`      | Gunakan balance statis (`true`) atau otomatis          | true             |
-| `FixedBalance`         | Nilai balance tetap (jika UseFixedBalance = true)      | 10000.0          |
-| `ShowDaysSinceLast`    | Tampilkan informasi Last Trade                         | true             |
-| `PanelWidth`           | Lebar panel                                            | 260              |
-| `PanelHeight`          | Tinggi panel                                           | 225              |
-| `PanelBGColor`         | Warna latar belakang panel                             | clrBlack         |
-| `Corner`               | Posisi sudut panel                                     | CORNER_LEFT_UPPER |
-| `XDistance` / `YDistance` | Jarak dari sudut chart                              | 10 / 10          |
+| Parameter                  | Deskripsi                                                      | Default     |
+|----------------------------|----------------------------------------------------------------|-------------|
+| `MaxLossPercent`           | Persentase maksimal loss harian                                | 4.0         |
+| `UseFixedBalance`          | Gunakan balance statis (`true`) atau otomatis dari balance awal hari | true        |
+| `FixedBalance`             | Nilai balance tetap (jika `UseFixedBalance = true`)            | 10000.0     |
+| `ShowDaysSinceLast`        | Tampilkan informasi "Last Trade" (hari sejak trade terakhir)   | true        |
+| `MaxMarginUsageSafe`       | Batas aman penggunaan margin (hijau)                           | 30.0        |
+| `MaxMarginUsageWarning`    | Batas peringatan penggunaan margin (kuning → merah)            | 50.0        |
+| `PanelWidth`               | Lebar panel                                                    | 260         |
+| `PanelHeight`              | Tinggi panel                                                   | 225         |
+| `PanelBGColor`             | Warna latar belakang panel                                     | clrBlack    |
+| `Corner`                   | Posisi sudut panel                                             | CORNER_LEFT_UPPER |
+| `XDistance` / `YDistance`  | Jarak dari sudut chart                                         | 10 / 10     |
+
+> **Catatan**: Parameter `MaxMarginUsageSafe` dan `MaxMarginUsageWarning` memungkinkan Anda menyesuaikan batas margin sesuai gaya trading masing-masing (contoh: ubah menjadi 25.0 dan 45.0 jika ingin lebih konservatif).
 
 ## Cara Menggunakan
 
