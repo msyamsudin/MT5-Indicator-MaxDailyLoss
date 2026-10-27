@@ -1,5 +1,8 @@
 # MT5 Indicator — MaxDailyLoss
 
+<img width="297" height="323" alt="image" src="https://github.com/user-attachments/assets/e15b6b30-4f50-4a84-8dea-5cb5b9b910fe" />
+
+
 Indikator MetaTrader 5 untuk memantau batas kerugian harian (*daily loss limit*) dan penggunaan margin akun, termasuk estimasi leverage efektif berdasarkan pengaturan margin simbol.
 
 ## Fitur
