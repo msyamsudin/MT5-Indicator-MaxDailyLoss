@@ -1,89 +1,114 @@
-# MT5 Indicator MaxDailyLoss
+# MT5 Indicator — MaxDailyLoss
 
-Indikator MT5 untuk monitoring **batas kerugian harian** sekaligus **penggunaan margin** secara real-time.
+Indikator MetaTrader 5 untuk memantau batas kerugian harian (*daily loss limit*) dan penggunaan margin akun, termasuk estimasi leverage efektif berdasarkan pengaturan margin simbol.
 
-<img width="315" height="238" alt="MaxDailyLoss Panel v4.04" src="https://github.com/user-attachments/assets/01f70bdd-3828-4859-9a5e-b260ff51b1e4" />
+## Fitur
 
+### Daily Risk Monitor
 
-## Fungsi Utama (v4.04)
+- **Max Loss** — batas kerugian harian berdasarkan persentase dari basis balance.
+- **P/L** — closed P/L hari ini ditambah floating P/L akun.
+- **Remaining** — sisa batas kerugian yang tersedia, ditampilkan dalam nominal atau persentase.
+- **Risk Bar** — visualisasi sisa batas kerugian dengan warna status.
+- **Last Trade** — jumlah hari sejak transaksi terakhir ditutup. Dapat disembunyikan melalui parameter.
 
-- Menampilkan **Max Loss** harian berdasarkan persentase
-- Menampilkan **Current P/L** (closed + floating)
-- Menampilkan **Remaining** loss yang masih diperbolehkan + persentasenya
-- Menampilkan **Last Trade** (jumlah hari sejak trade terakhir ditutup)
-- **Fitur Margin Usage Monitor** (real-time):
-  - Margin Usage (%) dengan warna peringatan
-  - Margin Level (%)
-  - Used Margin & Free Margin
-  - Leverage akun (otomatis)
-- Panel dapat dipindahkan (drag & drop di area atas)
-- Perubahan warna otomatis sesuai kondisi
+### Margin Monitor
 
-## Cara Install
+- **Usage** — penggunaan margin sebagai persentase equity.
+- **Level** — margin level akun.
+- **Used** dan **Free** — margin terpakai dan margin bebas.
+- **Leverage** — estimasi leverage efektif berdasarkan leverage akun dan margin rate yang digunakan indikator.
 
-1. Salin file `MaxDailyLoss.mq5` ke folder `MQL5/Indicators`
-2. Buka MetaEditor → Compile (F7)
-3. Attach indikator ke chart melalui Navigator → Custom Indicators
+### Panel dan Posisi
 
-## Parameter Input Utama
+- Panel ringkas dengan ukuran, warna, font, dan posisi awal yang dapat disesuaikan.
+- **Double-click** area header untuk mengaktifkan mode `MOVING`, yaitu panel mengikuti posisi kursor.
+- **Single-click** area header ketika mode `MOVING` aktif untuk mengunci posisi (`LOCKED`).
+- Posisi panel disimpan menggunakan Terminal Global Variables dengan kunci berdasarkan akun dan simbol, sehingga dapat dipulihkan saat indikator dipasang kembali pada kombinasi akun dan simbol yang sama.
 
-| Parameter                  | Deskripsi                                                      | Default     |
-|----------------------------|----------------------------------------------------------------|-------------|
-| `MaxLossPercent`           | Persentase maksimal loss harian                                | 4.0         |
-| `UseFixedBalance`          | Gunakan balance statis (`true`) atau otomatis dari balance awal hari | true        |
-| `FixedBalance`             | Nilai balance tetap (jika `UseFixedBalance = true`)            | 10000.0     |
-| `ShowDaysSinceLast`        | Tampilkan informasi "Last Trade" (hari sejak trade terakhir)   | true        |
-| `MaxMarginUsageSafe`       | Batas aman penggunaan margin (hijau)                           | 30.0        |
-| `MaxMarginUsageWarning`    | Batas peringatan penggunaan margin (kuning → merah)            | 50.0        |
-| `PanelWidth`               | Lebar panel                                                    | 260         |
-| `PanelHeight`              | Tinggi panel                                                   | 225         |
-| `PanelBGColor`             | Warna latar belakang panel                                     | clrBlack    |
-| `Corner`                   | Posisi sudut panel                                             | CORNER_LEFT_UPPER |
-| `XDistance` / `YDistance`  | Jarak dari sudut chart                                         | 10 / 10     |
+## Instalasi
 
-> **Catatan**: Parameter `MaxMarginUsageSafe` dan `MaxMarginUsageWarning` memungkinkan Anda menyesuaikan batas margin sesuai gaya trading masing-masing (contoh: ubah menjadi 25.0 dan 45.0 jika ingin lebih konservatif).
+1. Salin `MaxDailyLoss.mq5` ke folder data terminal MT5, di dalam `MQL5/Indicators`.
+2. Buka MetaEditor, lalu compile file dengan menekan **F7**.
+3. Kembali ke MT5 dan buka **Navigator → Indicators → Custom Indicators**.
+4. Pasang `MaxDailyLoss` ke chart.
+
+## Parameter Input
+
+| Parameter | Deskripsi | Default |
+|---|---|---:|
+| `MaxLossPercent` | Batas kerugian harian sebagai persentase basis balance | `4.0` |
+| `UseFixedBalance` | Jika `true`, gunakan `FixedBalance`; jika `false`, gunakan estimasi balance awal hari | `true` |
+| `FixedBalance` | Nilai balance tetap yang menjadi basis perhitungan | `10000.0` |
+| `ShowDaysSinceLast` | Tampilkan atau sembunyikan informasi `Last Trade` | `true` |
+| `RemainingDisplay` | Format `Remaining`: `REMAINING_USD` (nominal) atau `REMAINING_PERCENT` (persentase) | `REMAINING_USD` |
+| `MaxMarginUsageSafe` | Batas atas status aman untuk penggunaan margin (%) | `30.0` |
+| `MaxMarginUsageWarning` | Batas atas status peringatan untuk penggunaan margin (%) | `50.0` |
+| `CustomMarginRate` | Margin rate override untuk estimasi leverage efektif. Nilai `0` menggunakan initial margin rate dari broker jika tersedia | `4.0` |
+| `TextColor` | Warna teks umum | `clrWhite` |
+| `PanelBGColor` | Warna latar belakang panel | `clrBlack` |
+| `PanelWidth` | Lebar panel dalam piksel | `290` |
+| `PanelHeight` | Tinggi panel dalam piksel | `320` |
+| `Corner` | Sudut chart sebagai acuan posisi awal panel | `CORNER_LEFT_UPPER` |
+| `XDistance` | Jarak horizontal posisi awal panel dari sudut acuan | `10` |
+| `YDistance` | Jarak vertikal posisi awal panel dari sudut acuan | `10` |
+| `FontSize` | Ukuran font panel | `10` |
+| `Font` | Jenis font panel | `Consolas` |
 
 ## Cara Menggunakan
 
-1. Atur `MaxLossPercent` sesuai aturan risk management Anda (disarankan 1–4%).
-2. Atur `UseFixedBalance` sesuai preferensi:
-   - `true` → lebih konsisten (rekomendasi)
-   - `false` → pakai balance awal hari
-3. `ShowDaysSinceLast = true` untuk menampilkan informasi Last Trade.
-4. Attach ke chart → panel akan menampilkan semua informasi secara real-time.
+1. Atur `MaxLossPercent` dan basis balance sesuai aturan risiko yang ingin dipantau.
+2. Untuk memakai nilai balance tetap, set `UseFixedBalance = true` dan sesuaikan `FixedBalance`.
+3. Jika `UseFixedBalance = false`, indikator mengambil balance akun dikurangi floating P/L ketika basis harian di-reset.
+4. Pilih format `Remaining` melalui `RemainingDisplay`:
+   - `REMAINING_USD` — sisa batas kerugian dalam nominal.
+   - `REMAINING_PERCENT` — persentase batas kerugian yang masih tersisa.
+5. Atur ambang warna margin melalui `MaxMarginUsageSafe` dan `MaxMarginUsageWarning`.
+6. Atur `CustomMarginRate` untuk estimasi leverage efektif (untuk menentukan nilai, bisa dilihat pada bagian Spesifikasi - initial margin):
+   - Nilai lebih besar dari `0` — gunakan nilai override tersebut.
+   - Nilai `0` — gunakan initial margin rate yang dilaporkan broker; jika tidak tersedia, indikator memakai fallback `1.0`.
+7. Untuk memindahkan panel, double-click area header sampai status berubah menjadi `MOVING`, lalu gerakkan kursor. Single-click area header untuk mengunci panel kembali.
 
-**Fitur Margin Usage** membantu menjaga penggunaan margin tetap di bawah **20–30%** sesuai praktik trader profesional.
+## Warna Status
 
-## Warna Indikator
+### Remaining
 
-### Remaining Loss
-- **Hijau terang** → Sisa > 70%
-- **Kuning** → Sisa 30–70%
-- **Oranye** → Sisa 0–30%
-- **Merah** → Limit tercapai / melebihi
+- **Hijau** — lebih dari 70% batas kerugian masih tersisa.
+- **Kuning** — lebih dari 30% hingga 70% masih tersisa.
+- **Oranye** — lebih dari 0% hingga 30% masih tersisa.
+- **Merah** — tidak ada sisa batas kerugian.
 
 ### Margin Usage
-- **Hijau** → ≤ 30% (Aman)
-- **Kuning** → 30–50% (Waspada)
-- **Merah** → > 50% (Bahaya – kurangi posisi)
 
-## Perhitungan Dasar
+Warna mengikuti ambang input:
 
-- **Max Loss** = Basis Balance × (MaxLossPercent / 100)
-- **Daily P/L** = Closed P/L hari ini + Floating P/L
-- **Remaining** = Max Loss – Current Loss (jika negatif)
-- **Margin Usage (%)** = (Used Margin / Equity) × 100
-- **Last Trade** = Jumlah hari sejak trade terakhir ditutup (DEAL_ENTRY_OUT)
+- **Hijau** — `Usage` kurang dari atau sama dengan `MaxMarginUsageSafe`.
+- **Kuning** — `Usage` di atas `MaxMarginUsageSafe` dan kurang dari atau sama dengan `MaxMarginUsageWarning`.
+- **Merah** — `Usage` di atas `MaxMarginUsageWarning`.
 
-## Catatan Penting
+Dengan nilai default, status hijau berlaku sampai 30%, kuning di atas 30% sampai 50%, dan merah di atas 50%.
 
-- Semua data (**P/L, Remaining, Margin Usage**) update **real-time** setiap tick.
-- `ShowDaysSinceLast` dapat dimatikan jika tidak diperlukan.
-- Mode fixed balance membuat limit harian lebih stabil dan konsisten.
-- Pastikan history deal di MT5 cukup panjang agar perhitungan Closed P/L dan Last Trade akurat.
-- Panel dirancang tetap minimalis meskipun sudah menampilkan banyak informasi.
+## Perhitungan
+
+- **Max Loss** = basis balance × (`MaxLossPercent` / 100)
+- **Daily P/L** = closed P/L hari ini + floating P/L akun
+- **Remaining (nominal)** = nilai maksimum antara `Max Loss − kerugian berjalan` dan `0`
+- **Remaining (%)** = `Remaining` nominal / `Max Loss` × 100
+- **Margin Usage (%)** = Used Margin / Equity × 100
+- **Margin Level (%)** = nilai `ACCOUNT_MARGIN_LEVEL` dari MT5
+- **Leverage efektif (estimasi)** = leverage akun / margin rate yang digunakan indikator
+- **Last Trade** = jumlah pergantian hari kalender server sejak waktu transaksi terakhir dengan `DEAL_ENTRY_OUT`
+
+## Catatan dan Batasan
+
+- Data diperbarui ketika `OnCalculate` dipanggil oleh terminal, umumnya saat ada tick baru pada simbol chart. Pembaruan tidak dijamin terjadi tepat setiap detik.
+- Closed P/L dihitung dari deal dengan `DEAL_ENTRY_OUT` pada hari berjalan, termasuk profit, swap, dan komisi yang tercatat pada deal tersebut. Pastikan riwayat transaksi MT5 tersedia.
+- `UseFixedBalance = false` menggunakan balance akun dikurangi floating P/L saat basis harian di-reset. Verifikasi bahwa perilaku ini sesuai dengan cara batas kerugian dihitung oleh broker atau prop firm.
+- `CustomMarginRate` memengaruhi angka leverage yang ditampilkan. Angka ini merupakan estimasi berbasis margin rate, bukan jaminan bahwa margin aktual semua posisi atau simbol akan selalu mengikuti nilai tersebut.
+- Perhitungan batas kerugian pada indikator ini tidak menggantikan aturan resmi broker atau prop firm, termasuk zona waktu reset, komponen biaya yang dihitung, dan metode equity/balance yang digunakan.
 
 ---
 
-**Versi saat ini**: 4.04  
-**Update terbaru**: Penambahan Margin Usage Monitor + informasi Last Trade yang sudah ditampilkan di panel.
+**Versi kode:** 5.10
+
+**Fitur yang tercakup:** pemantauan daily loss dan margin, pilihan format Remaining, pengaturan margin rate untuk estimasi leverage efektif, serta panel `MOVING` / `LOCKED` dengan penyimpanan posisi.
